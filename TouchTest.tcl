@@ -1,112 +1,24 @@
 #--------------------------------------------------------------------------------------------------------
 #     Revision   Date (MM/DD/YYYY)    Developer	        Revision History
 #     --------  -----------------   -----------------   --------------------
-#       01      12/17/2020            Randy N            Initial Build
+#       01      7/21/2023            Jason Mann           Initial Build
 #
 #	   PROJECT: TITAN PIDU  
 #	   TITLE:   Vitis Test Script
 #
+# DONE: Inits the touchscreen. Reads the FIFO. Decodes DWORD1 and DWORD2. 
+#       Log X,Y coords as screen size 720x1280. Send data to log file.
+#			
+# TODO: Create two scripts, a -raw sends all to console, a -sum that puts up less
+#		Summary script shows touch down, up and move events if > 5-10 touch xy
+#       Add msCounter back into the log!
+#       Create log as CSV file that shows each line as an a touch event
+#       msCounter, touchNum, detect, touchType, , touchEvent, XRaw, YRaw, XScreen, YScreen
+#   
 #--------------------------------------------------------------------------------------------------------
 
 # source C:/TITAN/PIDU/Xilinx_Vitis_2/Scripts/TouchTest.tcl
-
-#---------------------------------------
-# Function to Read Address Data in the
-# XSCT Console window
-#---------------------------------------
-proc Read { addr} {
-    # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
-    # Set Clock format
-    set currenttime "[clock format [clock seconds] -format "%D %T %p"]"
-    # Write data to the unit
-    set curval "0x[string range [mrd -force $addr] end-8 end]"
-    # Send data to XSCT console window
-    puts "Data Read at ADDRESS:  $addr\n                DATA:  $curval\Time: $currenttime\n"
-    # Send data to logfile
-    puts $chan "Data Read at ADDRESS:  $addr\n                DATA:  $curval\Time: $currenttime\n"
-    # Close logfile
-    close $chan
-}
-
-#---------------------------------------
-# Function to Write Address Data in the
-# XSCT Console window
-#---------------------------------------
-proc Write { addr data} {
-    # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
-    # Set Clock format
-    set currenttime "[clock format [clock seconds] -format "%D %T %p"]"
-    # Write data to the unit
-    set curval "0x[string range [mwr -force $addr $data] end-8 end]"
-    # Send data to XSCT console window
-    puts "Data Write at ADDRESS: $addr\n                 DATA: $data\nTime: $currenttime\n"
-    # Send data to logfile
-    puts $chan "Data Write at ADDRESS: $addr\n                 DATA: $data\nTime: $currenttime\n"
-    # Close logfile
-    close $chan
-}
-
-#---------------------------------------
-# Function to Write Multiple Address 
-# Data in the XSCT Console window
-#---------------------------------------
-proc BlockWrite { addr data size} {
-    # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
-    # Set Clock format
-    set currenttime "[clock format [clock seconds] -format "%D %T %p"]"
-    # Write data to the unit
-    set curval "0x[string range [mwr -force $addr $data $size] end-8 end]"
-    # Send data to XSCT console window
-    puts "Block Data Written at ADDRESS: $addr\n                       Length: $size\n                         Data: $data\nTime: $currenttime\n"
-    # Send data to logfile
-    puts $chan "Block Data Written at ADDRESS: $addr\n                       Length: $size\n                         Data: $data\nTime: $currenttime\n "
-    # Close logfile
-    close $chan
-}
-
-#---------------------------------------
-# Function to Read a block of Address  
-# Data in the XSCT Console window
-#---------------------------------------
-proc BlockRead { addr size} {
-    # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
-    # Set Clock format
-    set currenttime "[clock format [clock seconds] -format "%D %T %p"]"
-    # Write data to the unit
-    set curval "[mrd $addr $size]"
-    # Send data to XSCT console window
-    puts "Data Read at ADDRESS:\n$curval\Time: $currenttime\n"
-    # Send data to logfile
-    puts $chan "Data Read at ADDRESS:\n$curval\Time: $currenttime\n"
-    # Close logfile
-    close $chan
-}
-
-
-#---------------------------------------
-# Function to Read a block of Address quietly
-# Data in the XSCT Console window
-#---------------------------------------
-proc BlockReadq { addr size} {
-    # Open Logfile
-    # set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
-    # Set Clock format
-    set currenttime "[clock format [clock seconds] -format "%D %T %p"]"
-    # Write data to the unit
-    set curval "[mrd -force $addr $size]"
-    # Send data to XSCT console window
-    puts "Time: $currenttime"
-    puts "Data Read at ADDRESS:\n$curval"
-    # Send data to logfile
-    #puts $chan "Data Read at ADDRESS:\n$curval\Time: $currenttime\n"
-    # Close logfile
-    # close $chan
-}
-
+#
 
 #---------------------------------------
 # Function to Create a Delay in the
@@ -122,7 +34,7 @@ proc Delay { N} {
 #---------------------------------------
 proc Version {} {
     # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
+    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
     # Set Clock format
     set currenttime "[clock format [clock seconds] -format "%D %T %p"]"
     # Write data to the unit
@@ -140,15 +52,15 @@ proc Version {} {
 # Function to Read Current time in the
 # XSCT Console window
 #---------------------------------------
-proc Time {} {
+proc Time {startValue} {
     # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
+    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
     # Set Clock format
-    set curval "[clock format [clock seconds] -format "%D %T %p"]"
+    set curval "[expr {[clock milliseconds] - $startValue}]"
     # Send data to XSCT console window
-    puts "Time:  $curval"
+    puts "\nTime:  $curval"
     # Send data to logfile
-    puts $chan "Time:  $curval"
+    puts $chan "\nTime:  $curval"
     # Close logfile
     close $chan
 }
@@ -159,7 +71,7 @@ proc Time {} {
 #---------------------------------------
 proc StartLogFile {} {
     # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR TRUNC}]
+    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR TRUNC}]
     # Set Clock format
     set curval "[clock format [clock seconds] -format "%D %T %p"]"
     # Send data to logfile
@@ -174,7 +86,7 @@ proc StartLogFile {} {
 #---------------------------------------
 proc EndLogFile {} {
     # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
+    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
     # Set Clock format
     set curval "[clock format [clock seconds] -format "%D %T %p"]"
     # Send data to logfile
@@ -191,57 +103,57 @@ proc InitTouchCtrl {} {
     set tchenable "[mrd -force 0x80150000 0x1]"
     
     if {[string match "80150000:   00000000\n" $tchenable]} {
-        puts "We're initializing the Touch"
+        puts "We're initializing the Touch... Please wait 5 sec."
         ### Enable Touch Controller Registers ###
         # Enable Touch Controller
-        Write 0x80150000 0x1
+        mwr -force 0x80150000 0x1
         # Add a delay in mS
         Delay 5
         # Reset the Controller
-        Write 0x80150004 0x1
+        mwr -force 0x80150004 0x1
         # Release Reset 
-        Write 0x80150004 0x0
+        mwr -force 0x80150004 0x0
         
         ### Load Touch Panel Controller Setup Registers ###
         # T100 TCHAUX
-        Write 0x80150200 0x09AB
-        Write 0x80150208 0x02
-        Write 0x80150204 0x01
+        mwr -force 0x80150200 0x09AB
+        mwr -force 0x80150208 0x02
+        mwr -force 0x80150204 0x01
         # Add a delay in mS
         Delay 100
         
         # T100 XRANGE
-        Write 0x80150200 0x09B5
-        Write 0x80150208 0x0FFF
-        Write 0x80150204 0x02
+        mwr -force 0x80150200 0x09B5
+        mwr -force 0x80150208 0x0FFF
+        mwr -force 0x80150204 0x02
         # Add a delay in mS
         Delay 100
         
         # T100 YRANGE
-        Write 0x80150200 0x09C0
-        Write 0x80150208 0x0FFF
-        Write 0x80150204 0x02
+        mwr -force 0x80150200 0x09C0
+        mwr -force 0x80150208 0x0FFF
+        mwr -force 0x80150204 0x02
         # Add a delay in mS
         Delay 20
         
         # T100 AMPLHST
-        Write 0x80150200 0x09DB
-        Write 0x80150208 0x04
-        Write 0x80150204 0x01
+        mwr -force 0x80150200 0x09DB
+        mwr -force 0x80150208 0x04
+        mwr -force 0x80150204 0x01
         # Add a delay in mS
         Delay 20
         
         # T7 IDLEACQINT & ACTVAQINT
-        Write 0x80150200 0x0646
-        Write 0x80150208 0xFFFF
-        Write 0x80150204 0x02
+        mwr -force 0x80150200 0x0646
+        mwr -force 0x80150208 0xFFFF
+        mwr -force 0x80150204 0x02
         # Add a delay in mS
         Delay 20
         
         # T8 CHRGTIME
-        Write 0x80150200 0x064B
-        Write 0x80150208 0x30
-        Write 0x80150204 0x01
+        mwr -force 0x80150200 0x064B
+        mwr -force 0x80150208 0x30
+        mwr -force 0x80150204 0x01
         # Add a delay in mS
         Delay 20
     } else {
@@ -253,10 +165,10 @@ proc InitTouchCtrl {} {
 # Function to decode DWORD #1
 # LogFile Created
 #---------------------------------------
-proc decodeDWORD1 {hexValue} {
+proc DecodeDWORD1 {hexValue} {
     # Convert the hexadecimal value to an integer
     # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
+    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
     
     set intValue [scan $hexValue "%x"]
 
@@ -295,15 +207,10 @@ proc decodeDWORD1 {hexValue} {
         8 "DOWNSUP"
         9 "DOWNUP"
     }
-    set touchVar touchTypes($touchType)
-
-    # Print the decoded information
-    puts "Millisecond Counter Snapshot: $msCounter"
-    puts "Touch Number: $touchNum"
-    puts "Touch Status: Detect: $detect"
-    puts "                Type: $touchTypes($touchType)"
-    puts "               Event: $touchEvents($touchEvent)"
+    # set touchVar touchTypes($touchType)
     
+    puts "TDetect: $detect, TType: $touchTypes($touchType), TEvent: $touchEvents($touchEvent), TNum: $touchNum"
+    puts $chan "TDetect: $detect, TType: $touchTypes($touchType), TEvent: $touchEvents($touchEvent), TNum: $touchNum"
     close $chan
 }
 
@@ -311,9 +218,9 @@ proc decodeDWORD1 {hexValue} {
 # Function to decode DWORD #2 for X,Y coord
 # LogFile Created
 #---------------------------------------
-proc decodeDWORD2 {hexValue} {
+proc DecodeDWORD2 {hexValue} {
     # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
+    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
 
     # Convert the hexadecimal value to an integer
     set intValue [scan $hexValue "%x"]
@@ -332,12 +239,15 @@ proc decodeDWORD2 {hexValue} {
 
     # Combine the X and Y position bytes to get the final X and Y positions
     set xPosition [expr {($xPosMSByte << 8) | $xPosLSByte}]
+    set xPosition [expr {$xPosition * 1280/4095}]
     set yPosition [expr {($yPosMSByte << 8) | $yPosLSByte}]
+    set yPosition [expr {$yPosition * 720/4095}]
 
     # Print the decoded information
-    puts "X Position: $xPosition"
-    puts "Y Position: $yPosition"
-    
+    #puts "X Position: $xPosition"
+    #puts "Y Position: $yPosition"
+    puts "X Position: $xPosition, Y Position: $yPosition"
+    puts $chan "X Position: $xPosition, Y Position: $yPosition"
     close $chan
 }
 #----------------------------------------------------------------------------------------------------------------
@@ -348,6 +258,8 @@ proc decodeDWORD2 {hexValue} {
 #
 #-----------------------------------------------------------
 
+# Get the starting time in mS
+set startTime [clock milliseconds]
 
 # Create logfile header 
 StartLogFile
@@ -367,9 +279,15 @@ for { set i 0}  {$i < 1000} {incr i} {
     set line2 [string trim [lindex [split [string trim [lindex $lines 1]] ":"] 1]]
     # puts "$line1"
     # puts "$line2"
-    decodeDWORD1 $line1
-    decodeDWORD2 $line2
     
+    if {[string match "00000000" $line1]} {
+        puts "NO TOUCH DETECTED"
+    } else {
+        Time $startTime
+        DecodeDWORD1 $line1
+        DecodeDWORD2 $line2
+        # puts ""
+    }
     Delay 10
 }
 
@@ -379,167 +297,14 @@ EndLogFile
 
 
 
+### DATA OUT ###
+################
 
+#Time: 07/20/2023 11:35:03 AM
+#Data Read at ADDRESS:
+#81500000:   89000000
+#81500004:   2AD50191
+#81500008:   079205AD
 
-
-
-
-
-
-
-
-
-
-# ##############
-# ##############
-# # LOGPILE ####
-# ############## 
-# ##############
-
-
-
-##---------------------------------------
-## Function to Write Splash Screen file
-##  in the XSCT Console window
-##---------------------------------------
-#proc SplashLoad { filename addr datasize  } {
-    ## Open Logfile
-    #set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
-    ## Set Clock format
-    #set currenttime "[clock format [clock seconds] -format "%D %T %p"]"
-    ## Write data to the unit
-    #set curval "0x[string range [mwr -force -bin -file $filename $addr $datasize] end-8 end]"
-    ## Send data to XSCT console window
-    #puts "SplashScreen Written at ADDRESS:       $addr"
-    #puts "SplashScreen Length:                   $datasize\nTime: $currenttime\n"
-    #puts ""
-    ## Send data to logfile
-    #puts $chan "SplashScreen Written at ADDRESS:       $addr"
-    #puts $chan "SplashScreen Length:                   $datasize\nTime: $currenttime\n"
-    #puts $chan ""
-    ## Close logfile
-    #close $chan
-#}
-
-##---------------------------------------
-## Function to Create a Delay in the
-## XSCT Console window
-##---------------------------------------
-#proc Delay { N} {
-        #after [expr {int($N)}]
-#}
-
-##---------------------------------------
-## Function to Verify Data in the
-## XSCT Console window with a Mask
-##---------------------------------------
-#proc DataVerify { addr mask data} {
-    ## Open Logfile
-    #set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
-    ## Set Clock format
-    #set currenttime "[clock format [clock seconds] -format "%D %T %p"]"
-    ## Write data to the unit
-    #set curval "0x[string range [mrd -force $addr] end-8 end]"
-    #set maskedval [expr {$curval & $mask}]
-    #set count 1
-    #if {$maskedval == $data} {
-    ## Send data to XSCT console window
-    #puts "Data Verify PASSED At Address: $addr\n                Expected Data: $data\n                  Actual DATA: $curval\Time: $currenttime\n"
-        ## Send data to logfile
-    #puts $chan "Data Verify PASSED At Address: $addr\n                Expected Data: $data\n                  Actual DATA: $curval\Time: $currenttime\n"
-    ## Close logfile
-    #close $chan
-    #}
-    #while { $maskedval != $data } {
-        #set curval "0x[string range [mrd -force $addr] end-8 end]"
-        #set maskedval [expr {$curval & $mask}]
-        ## Set a timeout value for data to be correct
-        #set count [ expr { $count + 1 } ]
-        #if { $count == 100 } {
-        ## Send data to XSCT console window
-        #puts "Data Verify FAILED at ADDRESS: $addr\n                    Data MASK: $mask \n                Expected DATA: $data\n                  Actual DATA: $curval\Time: $currenttime\n"
-        ## Send data to logfile
-        #puts $chan "Data Verify FAILED at ADDRESS: $addr\n                    Data MASK: $mask \n                Expected DATA: $data\n                  Actual DATA: $curval\Time: $currenttime\n"
-        #break
-        ## Close logfile
-        #close $chan
-        #}
-    #}
-#}
-
-##---------------------------------------
-## Function to Write Data in the
-## XSCT Console window with a Mask
-##---------------------------------------
-#proc MaskWrite { addr mask value } {
-    ## Open Logfile
-    #set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
-    ## Set Clock format
-    #set currenttime "[clock format [clock seconds] -format "%D %T %p"]"
-    #set curval "0x[string range [mrd -force $addr] end-8 end]"
-    #set curval [expr {$curval & ~($mask)}]
-    #set maskedval [expr {$value & $mask}]
-    #set maskedval [expr {$curval | $maskedval}]
-    ## Write data to the unit
-    #set curval "0x[string range [mwr -force $addr $maskedval] end-8 end]"
-    ## Send data to XSCT console window
-    #puts "Masked Write at ADDRESS: $addr\n              Data MASK: $mask\n           Data Written: $value\nTime: $currenttime\n"
-    ## Send data to logfile
-    #puts $chan "Masked Write at ADDRESS: $addr\n              Data MASK: $mask\n           Data Written: $value\nTime: $currenttime\n"
-    ## Close logfile
-    #close $chan
-#}
-
-##---------------------------------------
-## Function to Read A2D in the
-## XSCT Console window
-##---------------------------------------
-#proc ReadA2D {} {
-    ## Open Logfile
-    #set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
-    ## Set Clock format
-    #set currenttime "[clock format [clock seconds] -format "%D %T %p"]"
-    ## Write data to the unit
-    #set brtcurvalue "0x[string range [mrd -force 0x80140030] end-8 end]"
-    #set brtpot "0x[string range [mrd -force 0x80140034] end-8 end]"
-    #set brdtemp "0x[string range [mrd -force 0x80140038] end-8 end]"
-    #set leddvr1 "0x[string range [mrd -force 0x8014003C] end-8 end]"
-    #set leddvr2 "0x[string range [mrd -force 0x80140040] end-8 end]"
-    #set bkllum "0x[string range [mrd -force 0x80140044] end-8 end]"
-    #set bkltemp "0x[string range [mrd -force 0x80140048] end-8 end]"
-    #set bls1 "0x[string range [mrd -force 0x8014004C] end-8 end]"
-    #set bls2 "0x[string range [mrd -force 0x80140050] end-8 end]"
-    #set inputvlt "0x[string range [mrd -force 0x80140054] end-8 end]"
-    #set 12v6 "0x[string range [mrd -force 0x80140058] end-8 end]"
-    #set 5v0 "0x[string range [mrd -force 0x8014005C] end-8 end]"
-    #set 3v3 "0x[string range [mrd -force 0x80140060] end-8 end]"
-    #set 2v5 "0x[string range [mrd -force 0x80140064] end-8 end]"
-    #set 1v8 "0x[string range [mrd -force 0x80140068] end-8 end]"
-    #set 1v2 "0x[string range [mrd -force 0x8014006C] end-8 end]"
-    ## Send data to XSCT console window
-    #puts "Brightness Pot Current:        $brtcurvalue\Brightness Pot Wiper Voltage:  $brtpot\Baseboard Temperature:         $brdtemp\Backlight LED1 Driver Voltage: $leddvr1\Backlight LED2 Driver Voltage: $leddvr2\Backlight Luminance:           $bkllum\Backlight Temperature:         $bkltemp\Bezel Light Sensor 1:          $bls1\Bezel Light Sensor 2:          $bls2\Primary input Voltage:         $inputvlt\(12v6) Voltage:                $12v6\(5v0) Voltage:                 $5v0\(3v3) Voltage:                 $3v3\(2v5) Voltage:                 $2v5\(1v8) Voltage:                 $1v8\(1v2) Voltage:                 $1v2\Time: $currenttime\n"
-    ## Send data to logfile
-    #puts $chan "Brightness Pot Current:        $brtcurvalue\Brightness Pot Wiper Voltage:  $brtpot\Baseboard Temperature:         $brdtemp\Backlight LED1 Driver Voltage: $leddvr1\Backlight LED2 Driver Voltage: $leddvr2\Backlight Luminance:           $bkllum\Backlight Temperature:         $bkltemp\Bezel Light Sensor 1:          $bls1\Bezel Light Sensor 2:          $bls2\Primary input Voltage:         $inputvlt\(12v6) Voltage:                $12v6\(5v0) Voltage:                 $5v0\(3v3) Voltage:                 $3v3\(2v5) Voltage:                 $2v5\(1v8) Voltage:                 $1v8\(1v2) Voltage:                 $1v2\Time: $currenttime\n"
-    ## Close logfile
-    #close $chan
-#}
-
-##---------------------------------------
-## Function to Read Fan Speed Data in the
-## XSCT Console window
-##---------------------------------------
-#proc FanSpeed {} {
-    ## Open Logfile
-    #set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/log.txt {CREAT RDWR APPEND}]
-    ## Set Clock format
-    #set currenttime "[clock format [clock seconds] -format "%D %T %p"]"
-    ## Write data to the unit
-    #set curval "0x[string range [mrd -force 0x80000010] end-8 end]"
-    ## Send data to XSCT console window
-    #puts "Fan RPM Register Value:  $curval\nTime: $currenttime\n"
-    ## Send data to logfile
-    #puts $chan "Fan RPM Register Value:  $curval\nTime: $currenttime\n"
-    ## Close logfile
-    #close $chan
-#}
-
+#TDetect: 0, TType: RESERVED, TEvent: NO EVENT, TNum: 0
+#X Position: 0, Y Position: 0
