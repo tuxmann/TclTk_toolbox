@@ -6,19 +6,24 @@
 #	   PROJECT: TITAN PIDU  
 #	   TITLE:   Vitis Test Script
 #
-# DONE: Inits the touchscreen. Reads the FIFO. Decodes DWORD1 and DWORD2. 
+# DONE: 
+#		Inits the touchscreen. Reads the FIFO. Decodes DWORD1 and DWORD2. 
 #       Log X,Y coords as screen size 720x1280. Send data to log file.
+#
+# CHEK: 
+#       Create log as CSV file that shows each line as an a touch event
+#       testTime, msCounter, touchNum, detect, touchType, , touchEvent, XRaw, YRaw, XScreen, YScreen
+#
 #			
-# TODO: Create two scripts, a -raw sends all to console, a -sum that puts up less
+# TODO: 
+#		Create two scripts, a -raw sends all to console, a -sum that puts up less
 #		Summary script shows touch down, up and move events if > 5-10 touch xy
 #       Add msCounter back into the log!
-#       Create log as CSV file that shows each line as an a touch event
-#       msCounter, touchNum, detect, touchType, , touchEvent, XRaw, YRaw, XScreen, YScreen
 #   
 #--------------------------------------------------------------------------------------------------------
 
 # source C:/TITAN/PIDU/Xilinx_Vitis_2/Scripts/TouchTest.tcl
-#
+# mrd -force 0x81500000 0x100
 
 #---------------------------------------
 # Function to Create a Delay in the
@@ -34,7 +39,7 @@ proc Delay { N} {
 #---------------------------------------
 proc Version {} {
     # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
+    # set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
     # Set Clock format
     set currenttime "[clock format [clock seconds] -format "%D %T %p"]"
     # Write data to the unit
@@ -42,9 +47,9 @@ proc Version {} {
     # Send data to XSCT console window
     puts "FPGA Version: $curval\Time: $currenttime\n"
     # Send data to logfile
-    puts $chan "FPGA Version: $curval\Time: $currenttime\n"
+    # puts $chan "FPGA Version: $curval\Time: $currenttime\n"
     # Close logfile
-    close $chan
+    # close $chan
 }
 
 
@@ -54,15 +59,16 @@ proc Version {} {
 #---------------------------------------
 proc Time {startValue} {
     # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
-    # Set Clock format
-    set curval "[expr {[clock milliseconds] - $startValue}]"
+    # set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
+    # Set the elapsed time from the start of the script.
+    set curval [expr {[clock milliseconds] - $startValue}]
     # Send data to XSCT console window
     puts "\nTime:  $curval"
     # Send data to logfile
-    puts $chan "\nTime:  $curval"
+    #puts $chan "\nTime:  $curval"
     # Close logfile
-    close $chan
+    # close $chan
+    return "$curval"
 }
 
 #---------------------------------------
@@ -71,11 +77,11 @@ proc Time {startValue} {
 #---------------------------------------
 proc StartLogFile {} {
     # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR TRUNC}]
+    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.csv {CREAT RDWR TRUNC}]
     # Set Clock format
     set curval "[clock format [clock seconds] -format "%D %T %p"]"
     # Send data to logfile
-    puts $chan "*************************************************************\n*\n*    PIDU Vitis Test Log\n*    Time Started: $curval\n*\n*************************************************************\n"
+    puts $chan "Test Time, ms Counter, Touch Num, Detect, Touch Type, Touch Event, XTouch, YTouch, XScreen, YScreen"
     # Close logfile
     close $chan
 }
@@ -86,11 +92,11 @@ proc StartLogFile {} {
 #---------------------------------------
 proc EndLogFile {} {
     # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
+    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.csv {CREAT RDWR APPEND}]
     # Set Clock format
     set curval "[clock format [clock seconds] -format "%D %T %p"]"
     # Send data to logfile
-    puts $chan "*************************************************************\n*\n*    Test Script Completed\n*    Time Completed: $curval\n*\n*************************************************************\n"
+    # puts $chan "*************************************************************\n*\n*    Test Script Completed\n*    Time Completed: $curval\n*\n*************************************************************\n"
     # Close logfile
     close $chan
 }
@@ -168,10 +174,11 @@ proc InitTouchCtrl {} {
 proc DecodeDWORD1 {hexValue} {
     # Convert the hexadecimal value to an integer
     # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
+    # set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
     
+    puts $hexValue
     set intValue [scan $hexValue "%x"]
-
+    
     # Define the bit masks for each field
     set msCounterMask 0xFFFF0000
     set touchNumMask  0x0000FF00
@@ -179,7 +186,7 @@ proc DecodeDWORD1 {hexValue} {
 
     # Extract the fields using bitwise operations
     set msCounter [expr {($intValue & $msCounterMask) >> 16}]
-    set touchNum [expr {($intValue & $touchNumMask) >> 8}]
+    set touchNum  [expr {($intValue & $touchNumMask)  >>  8}]
     set tchStatus [expr {($intValue & $tchStatusMask)}]
 
     # Interpret the tchStatus field
@@ -209,9 +216,12 @@ proc DecodeDWORD1 {hexValue} {
     }
     # set touchVar touchTypes($touchType)
     
+    puts "12"
     puts "TDetect: $detect, TType: $touchTypes($touchType), TEvent: $touchEvents($touchEvent), TNum: $touchNum"
-    puts $chan "TDetect: $detect, TType: $touchTypes($touchType), TEvent: $touchEvents($touchEvent), TNum: $touchNum"
-    close $chan
+    # puts $chan "TDetect: $detect, TType: $touchTypes($touchType), TEvent: $touchEvents($touchEvent), TNum: $touchNum"
+    # close $chan
+    set outval "$msCounter, $touchNum, $detect, $touchTypes($touchType), $touchEvents($touchEvent)"
+    return $outval
 }
 
 #---------------------------------------
@@ -220,8 +230,8 @@ proc DecodeDWORD1 {hexValue} {
 #---------------------------------------
 proc DecodeDWORD2 {hexValue} {
     # Open Logfile
-    set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
-
+    # set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.txt {CREAT RDWR APPEND}]
+	
     # Convert the hexadecimal value to an integer
     set intValue [scan $hexValue "%x"]
 
@@ -238,17 +248,20 @@ proc DecodeDWORD2 {hexValue} {
     set yPosLSByte [expr {($intValue & $yPosLSByteMask)}]
 
     # Combine the X and Y position bytes to get the final X and Y positions
-    set xPosition [expr {($xPosMSByte << 8) | $xPosLSByte}]
-    set xPosition [expr {$xPosition * 1280/4095}]
-    set yPosition [expr {($yPosMSByte << 8) | $yPosLSByte}]
-    set yPosition [expr {$yPosition * 720/4095}]
+    set xPosition1 [expr {($xPosMSByte << 8) | $xPosLSByte}]
+    set xPosition2 [expr {$xPosition1 * 1280/4095}]
+    set yPosition1 [expr {($yPosMSByte << 8) | $yPosLSByte}]
+    set yPosition2 [expr {$yPosition1 * 720/4095}]
 
     # Print the decoded information
     #puts "X Position: $xPosition"
     #puts "Y Position: $yPosition"
-    puts "X Position: $xPosition, Y Position: $yPosition"
-    puts $chan "X Position: $xPosition, Y Position: $yPosition"
-    close $chan
+#       testTime, msCounter, touchNum, detect, touchType, , touchEvent, XRaw, YRaw, XScreen, YScreen    
+    puts "X Position: $xPosition1, Y Position: $yPosition1"
+    # puts $chan "X Position: $xPosition, Y Position: $yPosition"
+    # close $chan
+    set outval "$xPosition1, $yPosition1, $xPosition2, $yPosition2"
+    return $outval
 }
 #----------------------------------------------------------------------------------------------------------------
 
@@ -265,7 +278,7 @@ set startTime [clock milliseconds]
 StartLogFile
 
 # Read FPGA Version ID Register
-Version
+# Version
 
 # Initialize Touch Controller
 InitTouchCtrl
@@ -283,14 +296,26 @@ for { set i 0}  {$i < 1000} {incr i} {
     if {[string match "00000000" $line1]} {
         puts "NO TOUCH DETECTED"
     } else {
-        Time $startTime
-        DecodeDWORD1 $line1
-        DecodeDWORD2 $line2
+		###### 		THIS SHOULD WORK, BUT MAYBE NOT!!!	######
+		# Open Logfile
+		set chan [open c:/titan/pidu/xilinx_vitis_2/scripts/logfiles/TouchTest.csv {CREAT RDWR APPEND}]
+        set logline1 [Time $startTime]
+        puts "logging DW1"
+		set logline2 [DecodeDWORD1 $line1]
+        puts "logging DW2"
+        set logline3 [DecodeDWORD2 $line2]
+	    puts $chan "$logline1, $logline2, $logline3"
+	    close $chan
+        # Time $startTime
+        # DecodeDWORD1 $line1
+        # DecodeDWORD2 $line2
         # puts ""
     }
     Delay 10
 }
 
+# Flush the FIFO so the next test isn't tainted by the last test.
+set empty "[mrd -force 0x81500000 0x100]"
 
 # Create logfile Footer 
 EndLogFile
